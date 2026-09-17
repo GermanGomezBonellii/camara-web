@@ -6,8 +6,8 @@ const steps=[
  {group:2,title:'Ahora volvé al filtro anterior',text:'Juntá pulgar + índice de tu mano izquierda.',event:'FILTER_PREVIOUS',side:'Left',tip:8,success:'¡Perfecto! Filtro anterior.',note:'Derecha avanza · izquierda retrocede.'},
  {group:3,title:'Fijá una mitad del encuadre',text:'Juntá pulgar + meñique izquierdo.',event:'LOCK_LEFT',side:'Left',tip:20,kind:'lock',success:'¡Perfecto! Dos vértices fijos.',note:'Dos puntos quedan fijos; los otros siguen tu mano.'},
  {group:3,title:'Liberá esos dos vértices',text:'Separá los dedos y repetí pulgar + meñique izquierdo.',event:'LOCK_LEFT',side:'Left',tip:20,kind:'unlock',success:'¡Perfecto! Vértices libres.',note:'Cada meñique fija o libera sus dos puntos.'},
- {group:4,title:'Sacá una foto',text:'Juntá pulgar + dedo medio de tu mano izquierda.',event:'PHOTO_NOW',side:'Left',tip:12,kind:'photo',success:'¡Perfecto! Foto inmediata.',note:'Es una práctica: no se guarda la foto.'},
- {group:4,title:'Probá el temporizador',text:'Juntá pulgar + dedo medio de tu mano derecha.',event:'PHOTO_TIMER',side:'Right',tip:12,kind:'timer',success:'¡Perfecto! Foto con temporizador.',note:'La foto se toma después de 2 segundos.'},
+ {group:4,title:'Sacá una foto',text:'Juntá pulgar + dedo medio de tu mano derecha.',event:'PHOTO_NOW',side:'Right',tip:12,kind:'photo',success:'¡Perfecto! Foto inmediata.',note:'Es una práctica: no se guarda la foto.'},
+ {group:4,title:'Probá el temporizador',text:'Juntá pulgar + dedo medio de tu mano izquierda.',event:'PHOTO_TIMER',side:'Left',tip:12,kind:'timer',success:'¡Perfecto! Foto con temporizador.',note:'La foto se toma después de 2 segundos.'},
  {group:5,title:'Ocultá los bordes',text:'Juntá pulgar + anular izquierdo.',event:'BORDERS',side:'Left',tip:16,success:'¡Perfecto! Mostrar u ocultar bordes.',note:'Anular: entre el medio y el meñique.'},
  {group:5,title:'Ocultá los puntos',text:'Juntá pulgar + anular derecho.',event:'POINTS',side:'Right',tip:16,success:'¡Perfecto! Mostrar u ocultar puntos.',note:'Ocultar los puntos no detiene el seguimiento.'}
 ];
