@@ -1,5 +1,5 @@
 import {NodeZone,contact,gestureBindings} from './gestures.js?v=19';
-const KEY='camera-fx-tutorial-v1';
+const KEY='camera-fx-tutorial-inline-v2';
 const steps=[
  {group:1,title:'Formá el encuadre',text:'Mostrá ambas manos y separá los índices de los pulgares. Las puntas de esos cuatro dedos forman los cuatro vértices del encuadre.',kind:'polygon',success:'¡Perfecto! Este es tu encuadre.'},
  {group:2,title:'Cambiá al filtro siguiente',text:'Juntá pulgar + índice de tu mano derecha.',event:'FILTER_NEXT',side:'Right',tip:8,success:'¡Perfecto! Filtro siguiente.'},
@@ -22,17 +22,17 @@ function polygonSvg(){return `<svg viewBox="0 0 380 150" role="img" aria-label="
 export class TutorialController {
  constructor(api){
   this.api=api;this.active=false;this.index=-1;this.pending=false;this.timers=[];this.serial=0;this.readings={};this.lastPacket=-Infinity;this.practice=new NodeZone();
-  this.dialog=document.createElement('dialog');this.dialog.id='tutorial-dialog';this.dialog.setAttribute('aria-labelledby','tutorial-title');
+  this.dialog=document.createElement('section');this.dialog.id='tutorial-dialog';this.dialog.hidden=true;this.dialog.setAttribute('role','region');this.dialog.setAttribute('aria-labelledby','tutorial-title');
   this.dialog.innerHTML=`<div class="tutorial-shell"><header class="tutorial-top"><span id="tutorial-progress">BIENVENIDA</span><button id="tutorial-skip" class="quiet">SALTAR TUTORIAL</button></header><div class="tutorial-content"><div id="tutorial-animation"></div><h2 id="tutorial-title" tabindex="-1"></h2><p id="tutorial-text"></p><p id="tutorial-note"></p><div id="tutorial-summary" hidden></div><div id="tutorial-status" role="status" aria-live="polite"></div><p id="tutorial-hand-hint"></p></div><footer class="tutorial-bottom"><p id="tutorial-click-hint">Juntá un solo dedo con el pulgar a la vez y separalos claramente entre acciones. En modo Liviano, sostené el contacto un poquito más.</p><button id="tutorial-primary" class="primary">EMPEZAR</button></footer></div>`;
-  document.body.append(this.dialog);this.el=id=>this.dialog.querySelector('#tutorial-'+id);
-  this.el('skip').onclick=()=>this.close(false);this.dialog.addEventListener('cancel',e=>{e.preventDefault();this.close(false)});
+  document.querySelector('#stage').append(this.dialog);this.el=id=>this.dialog.querySelector('#tutorial-'+id);
+  this.el('skip').onclick=()=>this.close(false);this.dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();this.close(false)}});
   this.el('primary').onclick=()=>this.primary();
  }
  firstVisit(){try{return !localStorage.getItem(KEY)}catch{return true}}
  after(fn,ms){const serial=this.serial;this.timers.push(setTimeout(()=>{if(this.active&&serial===this.serial)fn()},ms))}
  clear(){this.serial++;this.timers.forEach(clearTimeout);this.timers=[];clearInterval(this.watchdog)}
- open(){if(this.active||!this.api.camera().running)return;this.active=true;this.index=-1;this.pending=false;this.practice.reset();this.readings={};this.lastPacket=-Infinity;this.api.enter();this.dialog.showModal();document.body.classList.add('tutorial-active');this.render();this.watchdog=setInterval(()=>this.status(),200)}
- close(completed){if(!this.active)return;this.clear();this.active=false;this.pending=false;this.practice.reset();this.el('animation').replaceChildren();this.dialog.close();document.body.classList.remove('tutorial-active');try{localStorage.setItem(KEY,JSON.stringify({status:completed?'completed':'skipped'}))}catch{}this.api.exit();document.querySelector('#tutorial-open')?.focus()}
+ open(){if(this.active)return;this.active=true;this.index=-1;this.pending=false;this.practice.reset();this.readings={};this.lastPacket=-Infinity;this.api.enter();this.dialog.hidden=false;document.body.classList.add('tutorial-active');this.render();this.watchdog=setInterval(()=>this.status(),200)}
+ close(completed){if(!this.active)return;this.clear();this.active=false;this.pending=false;this.practice.reset();this.el('animation').replaceChildren();this.dialog.hidden=true;document.body.classList.remove('tutorial-active');try{localStorage.setItem(KEY,JSON.stringify({status:completed?'completed':'skipped'}))}catch{}this.api.exit();document.querySelector('#tutorial-open')?.focus()}
  async primary(){
   if(this.index===steps.length){this.close(true);return}
   const serial=this.serial;this.el('primary').disabled=true;
@@ -47,12 +47,12 @@ export class TutorialController {
   const step=steps[this.index],intro=this.index<0,done=this.index===steps.length;
   this.el('progress').textContent=intro?'BIENVENIDA':`${done?6:step.group} / 6`;
   this.el('title').textContent=intro?'Usá tus manos para controlar Camera FX':done?'Listo para usar Camera FX':step.title;
-  this.el('text').textContent=intro?'La cámara ya está activa. Mantené las manos dentro de la imagen, con los dedos visibles y buena iluminación. Podés verte detrás de esta guía mientras practicás.':done?'Tu cámara, tus gestos. Ya podés empezar.':step.text;
+  this.el('text').textContent=intro?'Activá la cámara para empezar. Después, mirá tus manos en esta misma imagen y practicá cada gesto con la guía.':done?'Tu cámara, tus gestos. Ya podés empezar.':step.text;
   this.el('note').textContent=intro?'Cada gesto funciona como un click: juntá el pulgar con el dedo correspondiente, mantenelos juntos un instante y después separalos. Mantenerlos juntos no repite la acción. Para hacer otro click, separalos y volvé a juntarlos.':done?'Izquierda y derecha se refieren a tus manos reales, aunque la cámara se muestre como un espejo.':step.note||'Probalo para continuar. No cambiaremos tus ajustes durante la práctica.';
   this.el('animation').classList.remove('tutorial-flash');this.el('animation').innerHTML=done?'':step?.kind==='polygon'?polygonSvg():handSvg(step?.tip,step?.side);
   this.el('summary').hidden=!done;
   if(done)this.el('summary').innerHTML=`<section><h3>MANO IZQUIERDA</h3><p>Índice · filtro anterior<br>Medio · foto con temporizador<br>Anular · mostrar/ocultar bordes<br>Meñique · fijar/liberar sus vértices</p></section><section><h3>MANO DERECHA</h3><p>Índice · filtro siguiente<br>Medio · foto inmediata<br>Anular · mostrar/ocultar puntos<br>Meñique · fijar/liberar sus vértices</p></section><p>Siempre en contacto con el pulgar.</p>`;
-  this.el('primary').hidden=!(intro||done);this.el('primary').disabled=false;this.el('primary').textContent='EMPEZAR';
+  this.el('primary').hidden=!(intro||done);this.el('primary').disabled=false;this.el('primary').textContent=intro&&!this.api.camera().running?'ACTIVAR CÁMARA Y EMPEZAR':'EMPEZAR';
   this.el('status').textContent='';this.el('hand-hint').textContent='';this.el('title').focus();this.status();
  }
  status(){
@@ -63,7 +63,8 @@ export class TutorialController {
   const step=steps[this.index];const readings=performance.now()-this.lastPacket>400?{}:this.readings;
   const required=step.kind==='polygon'?['Left','Right']:[gestureBindings.find(b=>b.event===step.event).side];
   const missing=required.some(side=>!readings[side]);
-  this.el('status').textContent=missing?'Tienen que verse tus manos por la cámara':'Esperando tu gesto…';
+  const input=step.event?this.api.gestureState(step.event):null;
+  this.el('status').textContent=missing?'Tienen que verse tus manos por la cámara':input&&!input.armed?'Separá el pulgar de los demás dedos para preparar el click.':'Ahora juntá los dedos indicados y sostené el contacto un instante.';
   this.el('hand-hint').textContent=missing&&step.side?`Mostrá tu mano ${step.side==='Left'?'izquierda':'derecha'} a la cámara.`:'';
   if(missing)this.polygonSince=null;
  }

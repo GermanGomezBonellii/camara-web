@@ -1,6 +1,6 @@
-import {TutorialController} from './tutorial.js?v=20';
+import {TutorialController} from './tutorial.js?v=21';
 import {Renderer,categories,effects} from './renderer.js?v=7';
-import {createGestureClicks,detectGestureEvents,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=19';
+import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=19';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');
 const source=document.createElement('canvas'),src=source.getContext('2d'),finished=document.createElement('canvas'),out=finished.getContext('2d');
 let renderer,stream,worker,ready=false,busy=false,running=false,starting=false,epoch=0,raf=0,workerTimer;
@@ -9,7 +9,7 @@ let hands=[],trackingZone=null,lastDetection=0,lastSent=0,lastVideo=-1,lastRende
 let photoPending=false,saving=false,preview=null,previewUntil=0,downloadURL=null,counter=0,audio;
 const nodeZone=new NodeZone();
 const freshClicks=createGestureClicks;let clicks=freshClicks();
-let tutorial=null,tutorialRequested=false,gestureResumeAt=0,cameraError='',photoSession=0;
+let tutorial=null,gestureResumeAt=0,cameraError='',photoSession=0;
 const profiles={eco:{width:640,tracking:384,interval:100},balanced:{width:800,tracking:480,interval:75},quality:{width:960,tracking:640,interval:50}};
 let profileName='balanced';try{const saved=localStorage.getItem('camera-fx-performance');if(profiles[saved])profileName=saved}catch{}
 let profile=profiles[profileName],videoCallback=0;
@@ -32,8 +32,8 @@ $('freeze').onclick=toggleZone;
 function initAudio(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{})}catch{}}
 function shutter(){try{if(!audio||audio.state!=='running')return;const buffer=audio.createBuffer(1,Math.ceil(audio.sampleRate*.16),audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const t=i/audio.sampleRate;data[i]=(Math.random()*2-1)*(.6*Math.exp(-t*100)+(t>=.065?.4*Math.exp(-(t-.065)*100):0))}const sound=audio.createBufferSource();sound.buffer=buffer;sound.connect(audio.destination);sound.start()}catch{}}
 function cancelPhotoTimer(){clearTimeout(photoTimer);photoTimer=null;photoDeadline=0;$('countdown').hidden=true}
-function requestDelayedPhoto(){if(tutorial?.active||tutorialRequested)return false;initAudio();if(!running||saving||photoPending||photoTimer!==null||performance.now()<previewUntil)return false;photoDeadline=performance.now()+2000;const token=epoch;function update(){if(!running||epoch!==token){cancelPhotoTimer();return}const remaining=photoDeadline-performance.now();if(remaining<=0){cancelPhotoTimer();requestPhoto();return}$('countdown').hidden=false;$('countdown').textContent=String(Math.ceil(remaining/1000));photoTimer=setTimeout(update,Math.min(remaining,100))}update();return true}
-function requestPhoto(){if(tutorial?.active||tutorialRequested)return false;initAudio();if(!running){toast('Activá la cámara primero.');return false}if(saving||photoPending||performance.now()<previewUntil)return false;cancelPhotoTimer();photoPending=true;return true}
+function requestDelayedPhoto(){if(tutorial?.active)return false;initAudio();if(!running||saving||photoPending||photoTimer!==null||performance.now()<previewUntil)return false;photoDeadline=performance.now()+2000;const token=epoch;function update(){if(!running||epoch!==token){cancelPhotoTimer();return}const remaining=photoDeadline-performance.now();if(remaining<=0){cancelPhotoTimer();requestPhoto();return}$('countdown').hidden=false;$('countdown').textContent=String(Math.ceil(remaining/1000));photoTimer=setTimeout(update,Math.min(remaining,100))}update();return true}
+function requestPhoto(){if(tutorial?.active)return false;initAudio();if(!running){toast('Activá la cámara primero.');return false}if(saving||photoPending||performance.now()<previewUntil)return false;cancelPhotoTimer();photoPending=true;return true}
 $('capture').onclick=requestPhoto;
 function savePhoto(){if(saving)return;saving=true;const snap=document.createElement('canvas');snap.width=finished.width;snap.height=finished.height;snap.getContext('2d').drawImage(finished,0,0);const currentEpoch=epoch,currentPhotoSession=photoSession;
  snap.toBlob(blob=>{saving=false;if(!blob){toast('No se pudo guardar la foto. Intentá de nuevo.');return}if(epoch!==currentEpoch||photoSession!==currentPhotoSession||tutorial?.active)return;preview=snap;previewUntil=performance.now()+1000;shutter();$('flash').classList.remove('flash');void $('flash').offsetWidth;$('flash').classList.add('flash');const previous=downloadURL;downloadURL=URL.createObjectURL(blob);if(previous)setTimeout(()=>URL.revokeObjectURL(previous),60000);const name=`camera_fx_${new Date().toISOString().replace(/[:.]/g,'-')}_${++counter}.png`;const link=$('download');link.href=downloadURL;link.download=name;link.hidden=false;link.click();toast('Foto lista. Si no se descargó, usá el enlace de abajo.',2400)},'image/png')}
@@ -41,7 +41,7 @@ function processHands(data){busy=false;if(!running||performance.now()-data.time>
  nodeZone.update(readings,source.width,source.height);trackingZone=nodeZone.polygon;
  const now=performance.now(),events=detectGestureEvents(readings,clicks,source.width,source.height,now);
  if(tutorial?.active){tutorial.update(readings,now,source.width,source.height);for(const event of events)tutorial.event(event)}
- else if(!tutorialRequested&&now>=gestureResumeAt)executeGestureEvents(events);
+ else if(now>=gestureResumeAt)executeGestureEvents(events);
 
  if(hands.length===2)target=dynamicIntensity(distance(hands[0][0],hands[1][0],source.width,source.height)/source.width);$('tracking').textContent=hands.length?`${hands.length} mano${hands.length===1?'':'s'} detectada${hands.length===1?'':'s'}`:'Esperando manos';updateZoneUI()}
 function executeGestureEvents(events){
@@ -71,7 +71,7 @@ function tick(now){if(!running)return;const frame=video.getVideoPlaybackQuality?
  if($('points').checked){out.fillStyle='white';for(const hand of hands)for(const i of [4,8,12,16,20]){out.beginPath();const p=nodeZone.point(hand,i);out.arc(p.x*source.width,p.y*source.height,4,0,Math.PI*2);out.fill()}}
  if($('points').checked){out.strokeStyle='white';out.lineWidth=1.5;for(const pair of Object.values(nodeZone.fixed))for(const p of pair)out.strokeRect(p.x*source.width-5,p.y*source.height-5,10,10)}
  if(photoPending){photoPending=false;savePhoto()}ctx.drawImage(preview&&now<previewUntil?preview:finished,0,0);if(now>=previewUntil)preview=null;
- if(tutorialRequested&&tutorial&&!tutorial.active){tutorialRequested=false;tutorial.open()}
+
  }
  scheduleFrame();
  }catch(error){stopCamera();toast('Se interrumpió el procesamiento. Volvé a activar la cámara.',5000);console.error(error)}}
@@ -101,9 +101,10 @@ function resetGestureInput(){clicks=freshClicks();gestureResumeAt=performance.no
 tutorial=new TutorialController({
  startCamera,
  camera:()=>({running,starting,ready,error:cameraError}),
+ gestureState:event=>clicks[gestureBindings.find(b=>b.event===event)?.key],
  rearm:resetGestureInput,
- enter:()=>{cancelPhotoTimer();photoPending=false;photoSession++;preview=null;previewUntil=0;resetGestureInput()},
- exit:resetGestureInput
+ enter:()=>{$('controls').inert=true;cancelPhotoTimer();photoPending=false;photoSession++;preview=null;previewUntil=0;resetGestureInput()},
+ exit:()=>{$('controls').inert=false;resetGestureInput()}
 });
-$('tutorial-open').onclick=()=>{if(running&&lastRendered>=0)tutorial.open();else{tutorialRequested=true;startCamera()}};
-tutorialRequested=tutorial.firstVisit();
+$('tutorial-open').onclick=()=>tutorial.open();
+if(tutorial.firstVisit())tutorial.open();

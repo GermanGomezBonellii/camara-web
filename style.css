@@ -129,3 +129,15 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 @media(prefers-reduced-motion:reduce){.tutorial-flash{animation:none}}
 
 #tutorial-dialog{text-shadow:0 1px 3px #000,0 0 8px #0008;box-shadow:none;border-color:#ffffff45}#tutorial-note,#tutorial-click-hint,#tutorial-hand-hint{color:#eee}#tutorial-progress{color:#eee}
+
+/* The guide occupies the camera surface itself, without a modal/window. */
+#tutorial-dialog{position:absolute;inset:0;z-index:8;width:100%;height:100%;max-height:none;margin:0;border:0;border-radius:0;box-shadow:none;background:linear-gradient(0deg,#0008,transparent 45%,#0005);display:flex;flex-direction:column;pointer-events:auto}
+#tutorial-dialog::backdrop{background:none}
+.tutorial-shell{height:100%;max-height:none;display:flex;flex-direction:column}
+.tutorial-top{padding:12px 18px;border:0;background:transparent;flex:0 0 auto}
+.tutorial-content{width:min(640px,100%);margin:0 auto;flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:12px 20px;overflow:auto;text-align:center}
+#tutorial-animation svg{height:110px;flex-shrink:0}#tutorial-title{font-size:clamp(1.25rem,2.5vw,1.8rem);margin:8px 0}#tutorial-text{margin-bottom:8px}#tutorial-note{margin-bottom:0}
+.tutorial-bottom{background:transparent;border:0;padding:10px 20px 18px}.tutorial-bottom p{max-width:620px}
+.tutorial-active #welcome,.tutorial-active .view-label,.tutorial-active .camera-actions,.tutorial-active .capture-dock,.tutorial-active #locked{visibility:hidden}
+@media(max-height:600px){.tutorial-content{justify-content:flex-start}#tutorial-animation svg{height:65px}#tutorial-note{font-size:.75rem}.tutorial-bottom{padding:6px 14px}#tutorial-click-hint{font-size:.65rem}}
+@media(max-width:600px){#tutorial-animation svg{height:85px}.tutorial-content{padding:8px 14px}#tutorial-text{font-size:.9rem}#tutorial-note{font-size:.75rem;line-height:1.4}#tutorial-status{font-size:.9rem}#tutorial-primary{padding:11px 15px;font-size:.85rem}}
