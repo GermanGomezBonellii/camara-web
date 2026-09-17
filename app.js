@@ -1,4 +1,4 @@
-import {TutorialController} from './tutorial.js?v=21';
+import {TutorialController} from './tutorial.js?v=22';
 import {Renderer,categories,effects} from './renderer.js?v=7';
 import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=19';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');

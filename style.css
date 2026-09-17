@@ -141,3 +141,16 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 .tutorial-active #welcome,.tutorial-active .view-label,.tutorial-active .camera-actions,.tutorial-active .capture-dock,.tutorial-active #locked{visibility:hidden}
 @media(max-height:600px){.tutorial-content{justify-content:flex-start}#tutorial-animation svg{height:65px}#tutorial-note{font-size:.75rem}.tutorial-bottom{padding:6px 14px}#tutorial-click-hint{font-size:.65rem}}
 @media(max-width:600px){#tutorial-animation svg{height:85px}.tutorial-content{padding:8px 14px}#tutorial-text{font-size:.9rem}#tutorial-note{font-size:.75rem;line-height:1.4}#tutorial-status{font-size:.9rem}#tutorial-primary{padding:11px 15px;font-size:.85rem}}
+
+/* Compact instruction cluster centered in the live camera. */
+.tutorial-content{justify-content:center;gap:4px;padding:16px 24px}
+#tutorial-animation svg{height:145px;flex-shrink:0}
+#tutorial-title{margin:10px 0 4px}#tutorial-text{max-width:460px;align-self:center;margin:0}
+#tutorial-note{max-width:430px;align-self:center;margin:4px 0;font-size:.8rem}
+#tutorial-status{min-height:48px;display:flex;align-items:center;justify-content:center;margin:8px 0 0;line-height:1.35}
+#tutorial-hand-hint{margin:0;min-height:1em}
+.finger-muted{opacity:.45}.hand-palm{opacity:1}
+.gesture-success #tutorial-status{font-size:clamp(1.2rem,3vw,1.7rem);font-weight:650;color:white}
+.gesture-success #tutorial-text,.gesture-success #tutorial-note{opacity:.55}
+@media(max-width:600px){.tutorial-content{padding:10px 16px}#tutorial-animation svg{height:120px}#tutorial-text{font-size:.95rem}.tutorial-bottom{padding-bottom:14px}}
+@media(max-height:560px){.tutorial-content{justify-content:flex-start;padding:6px 16px;gap:0}#tutorial-animation svg{height:70px}#tutorial-title{margin:4px 0}#tutorial-status{min-height:35px;margin-top:4px}#tutorial-hand-hint:empty{display:none}}
