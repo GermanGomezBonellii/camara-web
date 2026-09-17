@@ -100,3 +100,5 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 @media(max-width:800px){aside{background:#171717;box-shadow:none;border-color:#555}.stage{border-radius:3px}}
 
 #performance{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid #444;border-radius:3px;background:#202020;color:#eee;font:inherit;font-size:.875rem}#performance-hint{font-size:.75rem;line-height:1.5}
+
+#countdown{position:absolute;inset:0;display:grid;place-items:center;z-index:4;pointer-events:none;color:white;font-size:clamp(5rem,12vw,9rem);font-weight:300;font-variant-numeric:tabular-nums;text-shadow:0 2px 12px #000}
