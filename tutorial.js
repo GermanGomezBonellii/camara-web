@@ -31,7 +31,7 @@ export class TutorialController {
  firstVisit(){try{return !localStorage.getItem(KEY)}catch{return true}}
  after(fn,ms){const serial=this.serial;this.timers.push(setTimeout(()=>{if(this.active&&serial===this.serial)fn()},ms))}
  clear(){this.serial++;this.timers.forEach(clearTimeout);this.timers=[];clearInterval(this.watchdog)}
- open(){if(this.active)return;this.active=true;this.index=-1;this.pending=false;this.practice.reset();this.readings={};this.lastPacket=-Infinity;this.api.enter();this.dialog.showModal();document.body.classList.add('tutorial-active');this.render();this.watchdog=setInterval(()=>this.status(),200)}
+ open(){if(this.active||!this.api.camera().running)return;this.active=true;this.index=-1;this.pending=false;this.practice.reset();this.readings={};this.lastPacket=-Infinity;this.api.enter();this.dialog.showModal();document.body.classList.add('tutorial-active');this.render();this.watchdog=setInterval(()=>this.status(),200)}
  close(completed){if(!this.active)return;this.clear();this.active=false;this.pending=false;this.practice.reset();this.el('animation').replaceChildren();this.dialog.close();document.body.classList.remove('tutorial-active');try{localStorage.setItem(KEY,JSON.stringify({status:completed?'completed':'skipped'}))}catch{}this.api.exit();document.querySelector('#tutorial-open')?.focus()}
  async primary(){
   if(this.index===steps.length){this.close(true);return}
@@ -47,7 +47,7 @@ export class TutorialController {
   const step=steps[this.index],intro=this.index<0,done=this.index===steps.length;
   this.el('progress').textContent=intro?'BIENVENIDA':`${done?6:step.group} / 6`;
   this.el('title').textContent=intro?'Usá tus manos para controlar Camera FX':done?'Listo para usar Camera FX':step.title;
-  this.el('text').textContent=intro?'Para usar los gestos, activá la cámara y mantené las manos dentro de la imagen, con los dedos visibles y buena iluminación.':done?'Tu cámara, tus gestos. Ya podés empezar.':step.text;
+  this.el('text').textContent=intro?'La cámara ya está activa. Mantené las manos dentro de la imagen, con los dedos visibles y buena iluminación. Podés verte detrás de esta guía mientras practicás.':done?'Tu cámara, tus gestos. Ya podés empezar.':step.text;
   this.el('note').textContent=intro?'Cada gesto funciona como un click: juntá el pulgar con el dedo correspondiente, mantenelos juntos un instante y después separalos. Mantenerlos juntos no repite la acción. Para hacer otro click, separalos y volvé a juntarlos.':done?'Izquierda y derecha se refieren a tus manos reales, aunque la cámara se muestre como un espejo.':step.note||'Probalo para continuar. No cambiaremos tus ajustes durante la práctica.';
   this.el('animation').classList.remove('tutorial-flash');this.el('animation').innerHTML=done?'':step?.kind==='polygon'?polygonSvg():handSvg(step?.tip,step?.side);
   this.el('summary').hidden=!done;

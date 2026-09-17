@@ -104,8 +104,8 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 #countdown{position:absolute;inset:0;display:grid;place-items:center;z-index:4;pointer-events:none;color:white;font-size:clamp(5rem,12vw,9rem);font-weight:300;font-variant-numeric:tabular-nums;text-shadow:0 2px 12px #000}
 
 /* Onboarding is a modal layer; no expensive backdrop blur on the live camera. */
-#tutorial-dialog{padding:0;border:1px solid #666;border-radius:10px;color:#f5f5f5;background:#202020ed;width:min(620px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);overflow:hidden;box-shadow:0 10px 50px #0004}
-#tutorial-dialog::backdrop{background:rgba(30,30,30,.65)}
+#tutorial-dialog{padding:0;border:1px solid #666;border-radius:10px;color:#f5f5f5;background:rgba(20,20,20,.28);width:min(620px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);overflow:hidden;box-shadow:0 10px 50px #0004}
+#tutorial-dialog::backdrop{background:rgba(30,30,30,.16)}
 .tutorial-shell{max-height:calc(100dvh - 26px);display:flex;flex-direction:column}
 .tutorial-top{flex:0 0 auto;height:auto;padding:14px 20px;justify-content:space-between;gap:12px;background:transparent;border-bottom:1px solid #ffffff20}
 #tutorial-progress{font:12px Consolas,monospace;letter-spacing:.12em;color:#bbb}
@@ -127,3 +127,5 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 @media(max-width:600px){.tutorial-top{padding:10px 14px}.tutorial-content{padding:12px 18px}#tutorial-animation svg{height:125px}#tutorial-summary{gap:12px}#tutorial-summary p{font-size:.75rem}.tutorial-bottom{padding:10px 16px}#tutorial-open{padding:9px 6px;font-size:.75rem}header{gap:5px}.header-actions{gap:4px}}
 @media(max-height:560px){#tutorial-animation svg{height:90px}.tutorial-content{padding:8px 18px}.tutorial-bottom{padding:8px 16px}#tutorial-click-hint{font-size:.65rem}#tutorial-title{font-size:1.3rem}}
 @media(prefers-reduced-motion:reduce){.tutorial-flash{animation:none}}
+
+#tutorial-dialog{text-shadow:0 1px 3px #000,0 0 8px #0008;box-shadow:none;border-color:#ffffff45}#tutorial-note,#tutorial-click-hint,#tutorial-hand-hint{color:#eee}#tutorial-progress{color:#eee}
