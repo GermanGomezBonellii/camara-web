@@ -1,4 +1,4 @@
-import {NodeZone,contact,gestureBindings} from './gestures.js?v=24';
+import {NodeZone,contact,gestureBindings} from './gestures.js?v=25';
 const KEY='camera-fx-tutorial-inline-v2';
 const steps=[
  {group:1,title:'Formá el encuadre',text:'Mostrá ambas manos y separá los índices de los pulgares.',kind:'polygon',success:'¡Perfecto! Este es tu encuadre.'},
@@ -6,8 +6,8 @@ const steps=[
  {group:2,title:'Ahora volvé al filtro anterior',text:'Juntá pulgar + índice de tu mano izquierda.',event:'FILTER_PREVIOUS',side:'Left',tip:8,success:'¡Perfecto! Filtro anterior.',note:'Derecha avanza · izquierda retrocede.'},
  {group:3,title:'Fijá una mitad del encuadre',text:'Juntá pulgar + meñique izquierdo.',event:'LOCK_LEFT',side:'Left',tip:20,kind:'lock',success:'¡Perfecto! Dos vértices fijos.',note:'Dos puntos quedan fijos; los otros siguen tu mano.'},
  {group:3,title:'Liberá esos dos vértices',text:'Separá los dedos y repetí pulgar + meñique izquierdo.',event:'LOCK_LEFT',side:'Left',tip:20,kind:'unlock',success:'¡Perfecto! Vértices libres.',note:'Cada meñique fija o libera sus dos puntos.'},
- {group:4,title:'Sacá una foto',text:'Juntá pulgar + dedo medio de tu mano derecha.',event:'PHOTO_NOW',side:'Right',tip:12,kind:'photo',success:'¡Perfecto! Foto inmediata.',note:'Es una práctica: no se guarda la foto.'},
- {group:4,title:'Probá el temporizador',text:'Juntá pulgar + dedo medio de tu mano izquierda.',event:'PHOTO_TIMER',side:'Left',tip:12,kind:'timer',success:'¡Perfecto! Foto con temporizador.',note:'La foto se toma después de 2 segundos.'},
+ {group:4,title:'Sacá una foto',text:'Juntá pulgar + dedo medio de tu mano izquierda.',event:'PHOTO_NOW',side:'Left',tip:12,kind:'photo',success:'¡Perfecto! Foto inmediata.',note:'Es una práctica: no se guarda la foto.'},
+ {group:4,title:'Probá el temporizador',text:'Juntá pulgar + dedo medio de tu mano derecha.',event:'PHOTO_TIMER',side:'Right',tip:12,kind:'timer',success:'¡Perfecto! Foto con temporizador.',note:'La foto se toma después de 2 segundos.'},
  {group:5,title:'Ocultá los bordes',text:'Juntá pulgar + anular izquierdo.',event:'BORDERS',side:'Left',tip:16,success:'¡Perfecto! Mostrar u ocultar bordes.',note:'Anular: entre el medio y el meñique.'},
  {group:5,title:'Ocultá los puntos',text:'Juntá pulgar + anular derecho.',event:'POINTS',side:'Right',tip:16,success:'¡Perfecto! Mostrar u ocultar puntos.',note:'Ocultar los puntos no detiene el seguimiento.'}
 ];
@@ -41,7 +41,7 @@ export class TutorialController {
   if(this.api.camera().running){if(this.index===-1)this.advance();else this.status()}
   else{this.el('status').textContent=this.api.camera().error||'No pudimos activar la cámara. Revisá el permiso y volvé a intentar.';this.el('primary').textContent='REINTENTAR CÁMARA'}
  }
- advance(){this.index++;if(this.index>=steps.length){this.close(true);return}this.pending=false;this.polygonSince=null;this.api.rearm();if(steps[this.index].event==='BORDERS'||steps[this.index].event==='POINTS')this.api.prepareVisibility(steps[this.index].event);this.render()}
+ advance(){this.index++;if(this.index>=steps.length){this.close(true);return}this.pending=false;this.polygonSince=null;this.api.rearm();if(steps[this.index].kind==='lock')this.api.prepareLock();if(steps[this.index].event==='BORDERS'||steps[this.index].event==='POINTS')this.api.prepareVisibility(steps[this.index].event);this.render()}
  render(){
   const step=steps[this.index],intro=this.index<0;
   this.dialog.classList.remove('gesture-success');
@@ -79,8 +79,8 @@ export class TutorialController {
  event(event){
   if(!this.active||this.pending)return;const step=steps[this.index];if(!step||step.event!==event)return;
   if(['FILTER_NEXT','FILTER_PREVIOUS','BORDERS','POINTS'].includes(event))this.api.applyGesture(event);
-  if(step.kind==='lock'){if(!this.practice.toggle('Left')||!this.practice.fixed.Left)return}
-  if(step.kind==='unlock'){if(!this.practice.fixed.Left||!this.practice.toggle('Left')||this.practice.fixed.Left)return}
+  if(step.kind==='lock'){if(!this.api.setLeftLocked(true))return}
+  if(step.kind==='unlock'){if(!this.api.setLeftLocked(false))return}
   if(step.kind==='timer'){this.pending=true;this.el('status').textContent='2';this.after(()=>this.el('status').textContent='1',1000);this.after(()=>this.confirm(),2000);return}
   if(step.kind==='photo'){this.el('animation').classList.add('tutorial-flash');this.after(()=>this.el('animation').classList.remove('tutorial-flash'),200)}
   this.confirm();

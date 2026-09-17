@@ -137,3 +137,7 @@ aside{background:#171717;border-color:#303030;border-radius:3px;box-shadow:none}
 #tutorial-animation svg{width:195px;height:195px}
 @media(max-width:600px){#tutorial-animation{width:180px;height:180px}#tutorial-animation svg{width:165px;height:165px}}
 @media(max-height:560px){#tutorial-animation{width:100px;height:100px}#tutorial-animation svg{width:95px;height:95px}#tutorial-hand-label{font-size:.7rem}}
+
+/* Dim only the camera display, never the saved frame or guide. */
+.tutorial-active #stage{background:#424242}
+.tutorial-active #camera{opacity:.38}

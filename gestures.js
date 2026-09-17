@@ -39,8 +39,8 @@ export class NodeZone {
 export const gestureBindings=[
  {key:'Left',side:'Left',tip:20,event:'LOCK_LEFT'},
  {key:'Right',side:'Right',tip:20,event:'LOCK_RIGHT'},
- {key:'photoLeft',side:'Left',tip:12,event:'PHOTO_TIMER'},
- {key:'photoRight',side:'Right',tip:12,event:'PHOTO_NOW'},
+ {key:'photoLeft',side:'Left',tip:12,event:'PHOTO_NOW'},
+ {key:'photoRight',side:'Right',tip:12,event:'PHOTO_TIMER'},
  {key:'ringLeft',side:'Left',tip:16,event:'BORDERS'},
  {key:'ringRight',side:'Right',tip:16,event:'POINTS'},
  {key:'effectLeft',side:'Left',tip:8,event:'FILTER_NEXT'},

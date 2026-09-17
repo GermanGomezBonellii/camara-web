@@ -1,6 +1,6 @@
-import {TutorialController} from './tutorial.js?v=24';
+import {TutorialController} from './tutorial.js?v=25';
 import {Renderer,categories,effects} from './renderer.js?v=7';
-import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=24';
+import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=25';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');
 const source=document.createElement('canvas'),src=source.getContext('2d'),finished=document.createElement('canvas'),out=finished.getContext('2d');
 let renderer,stream,worker,ready=false,busy=false,running=false,starting=false,epoch=0,raf=0,workerTimer;
@@ -96,7 +96,7 @@ $('panel-toggle').onclick=()=>showControls($('controls').hidden);
 $('performance').dispatchEvent(new Event('change'));
 showControls(!matchMedia('(max-width: 800px)').matches);
 
-// The tutorial owns practice state only; camera/tracker and Click remain shared.
+// Tutorial gestures share the visible camera state; photos remain simulated.
 function resetGestureInput(){clicks=freshClicks();gestureResumeAt=performance.now()+250}
 tutorial=new TutorialController({
  startCamera,
@@ -104,6 +104,8 @@ tutorial=new TutorialController({
  gestureState:event=>clicks[gestureBindings.find(b=>b.event===event)?.key],
  rearm:resetGestureInput,
  applyGesture:event=>executeGestureEvents([event]),
+ prepareLock:()=>{delete nodeZone.fixed.Left;$('border').checked=true;$('points').checked=true;updateZoneUI()},
+ setLeftLocked:fixed=>{if(Boolean(nodeZone.fixed.Left)!==fixed&&!toggleHandNodes('Left'))return false;updateZoneUI();return Boolean(nodeZone.fixed.Left)===fixed},
  prepareVisibility:event=>{$(event==='BORDERS'?'border':'points').checked=true},
  enter:()=>{$('controls').inert=true;cancelPhotoTimer();photoPending=false;photoSession++;preview=null;previewUntil=0;resetGestureInput()},
  exit:()=>{$('controls').inert=false;resetGestureInput()}
