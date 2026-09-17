@@ -8,8 +8,8 @@ const steps=[
  {group:3,title:'Liberá esos dos vértices',text:'Separá los dedos y repetí pulgar + meñique izquierdo.',event:'LOCK_LEFT',side:'Left',tip:20,kind:'unlock',success:'¡Perfecto! Vértices libres.',note:'Cada meñique fija o libera sus dos puntos.'},
  {group:4,title:'Sacá una foto',text:'Juntá pulgar + dedo medio de tu mano derecha.',event:'PHOTO_NOW',side:'Right',tip:12,kind:'photo',success:'¡Perfecto! Foto inmediata.',note:'Es una práctica: no se guarda la foto.'},
  {group:4,title:'Probá el temporizador',text:'Juntá pulgar + dedo medio de tu mano izquierda.',event:'PHOTO_TIMER',side:'Left',tip:12,kind:'timer',success:'¡Perfecto! Foto con temporizador.',note:'La foto se toma después de 2 segundos.'},
- {group:5,title:'Ocultá los bordes',text:'Juntá pulgar + anular izquierdo.',event:'BORDERS',side:'Left',tip:16,success:'¡Perfecto! Mostrar u ocultar bordes.',note:'Anular: entre el medio y el meñique.'},
- {group:5,title:'Ocultá los puntos',text:'Juntá pulgar + anular derecho.',event:'POINTS',side:'Right',tip:16,success:'¡Perfecto! Mostrar u ocultar puntos.',note:'Ocultar los puntos no detiene el seguimiento.'}
+ {group:5,title:'Ocultá los bordes',text:'Juntá pulgar + anular derecho.',event:'BORDERS',side:'Right',tip:16,success:'¡Perfecto! Mostrar u ocultar bordes.',note:'Anular: entre el medio y el meñique.'},
+ {group:5,title:'Ocultá los puntos',text:'Juntá pulgar + anular izquierdo.',event:'POINTS',side:'Left',tip:16,success:'¡Perfecto! Mostrar u ocultar puntos.',note:'Ocultar los puntos no detiene el seguimiento.'}
 ];
 function handSvg(tip=8,side='Right'){
  const fingers=[{tip:8,x:77,y:42},{tip:12,x:107,y:25},{tip:16,x:137,y:38},{tip:20,x:164,y:67}];
