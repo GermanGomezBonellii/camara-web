@@ -51,9 +51,15 @@ export function detectGestureEvents(readings,clicks,w,h,now){
  const events=[];
  for(const side of ['Left','Right']){
   const hand=readings[side];
-  const values=Object.fromEntries([8,12,16,20].map(tip=>[tip,hand?contact(hand,tip,w,h,.3,.5):null]));
-  const ambiguous=Object.values(values).filter(v=>v===true).length>1;
-  for(const b of gestureBindings.filter(b=>b.side===side))if(clicks[b.key].update(ambiguous?null:values[b.tip],now))events.push(b.event);
+  const values=Object.fromEntries([8,12,16,20].map(tip=>[tip,hand?contact(hand,tip,w,h,.35,.55):null]));
+  const palm=hand?distance(hand[0],hand[9],w,h):0;
+  const touching=hand&&palm>0?[8,12,16,20].filter(tip=>values[tip]===true).map(tip=>({tip,d:distance(hand[4],hand[tip],w,h)/palm})).sort((a,b)=>a.d-b.d):[];
+  const winner=touching.length===1||touching.length>1&&touching[1].d-touching[0].d>=.08?touching[0].tip:null;
+  for(const b of gestureBindings.filter(b=>b.side===side)){
+   // A released finger must rearm even if another finger touches the thumb.
+   const value=values[b.tip]===false?false:values[b.tip]===true&&b.tip===winner?true:null;
+   if(clicks[b.key].update(value,now))events.push(b.event);
+  }
  }
  return events;
 }

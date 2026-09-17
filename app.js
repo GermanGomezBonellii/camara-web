@@ -1,6 +1,6 @@
-import {TutorialController} from './tutorial.js?v=22';
+import {TutorialController} from './tutorial.js?v=24';
 import {Renderer,categories,effects} from './renderer.js?v=7';
-import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=19';
+import {createGestureClicks,detectGestureEvents,gestureBindings,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=24';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');
 const source=document.createElement('canvas'),src=source.getContext('2d'),finished=document.createElement('canvas'),out=finished.getContext('2d');
 let renderer,stream,worker,ready=false,busy=false,running=false,starting=false,epoch=0,raf=0,workerTimer;
@@ -103,8 +103,10 @@ tutorial=new TutorialController({
  camera:()=>({running,starting,ready,error:cameraError}),
  gestureState:event=>clicks[gestureBindings.find(b=>b.event===event)?.key],
  rearm:resetGestureInput,
+ applyGesture:event=>executeGestureEvents([event]),
+ prepareVisibility:event=>{$(event==='BORDERS'?'border':'points').checked=true},
  enter:()=>{$('controls').inert=true;cancelPhotoTimer();photoPending=false;photoSession++;preview=null;previewUntil=0;resetGestureInput()},
  exit:()=>{$('controls').inert=false;resetGestureInput()}
 });
 $('tutorial-open').onclick=()=>tutorial.open();
-if(tutorial.firstVisit())tutorial.open();
+tutorial.open();

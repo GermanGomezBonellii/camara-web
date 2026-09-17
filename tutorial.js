@@ -1,4 +1,4 @@
-import {NodeZone,contact,gestureBindings} from './gestures.js?v=19';
+import {NodeZone,contact,gestureBindings} from './gestures.js?v=24';
 const KEY='camera-fx-tutorial-inline-v2';
 const steps=[
  {group:1,title:'Formá el encuadre',text:'Mostrá ambas manos y separá los índices de los pulgares.',kind:'polygon',success:'¡Perfecto! Este es tu encuadre.'},
@@ -23,7 +23,7 @@ export class TutorialController {
  constructor(api){
   this.api=api;this.active=false;this.index=-1;this.pending=false;this.timers=[];this.serial=0;this.readings={};this.lastPacket=-Infinity;this.practice=new NodeZone();
   this.dialog=document.createElement('section');this.dialog.id='tutorial-dialog';this.dialog.hidden=true;this.dialog.setAttribute('role','region');this.dialog.setAttribute('aria-labelledby','tutorial-title');
-  this.dialog.innerHTML=`<div class="tutorial-shell"><header class="tutorial-top"><span id="tutorial-progress">BIENVENIDA</span><button id="tutorial-skip" class="quiet">SALTAR TUTORIAL</button></header><div class="tutorial-content"><div id="tutorial-animation"></div><h2 id="tutorial-title" tabindex="-1"></h2><p id="tutorial-text"></p><p id="tutorial-note"></p><div id="tutorial-status" role="status" aria-live="polite"></div><p id="tutorial-hand-hint"></p></div><footer class="tutorial-bottom"><p id="tutorial-click-hint">En modo Liviano, sostené el gesto un poquito más.</p><button id="tutorial-primary" class="primary">EMPEZAR</button></footer></div>`;
+  this.dialog.innerHTML=`<div class="tutorial-shell"><header class="tutorial-top"><span id="tutorial-progress">BIENVENIDA</span><button id="tutorial-skip" class="quiet">SALTAR TUTORIAL</button></header><div class="tutorial-content"><p id="tutorial-hand-label"></p><div id="tutorial-animation"></div><h2 id="tutorial-title" tabindex="-1"></h2><p id="tutorial-text"></p><p id="tutorial-note"></p><div id="tutorial-status" role="status" aria-live="polite"></div><p id="tutorial-hand-hint"></p></div><footer class="tutorial-bottom"><p id="tutorial-click-hint"></p><button id="tutorial-primary" class="primary">EMPEZAR</button></footer></div>`;
   document.querySelector('#stage').append(this.dialog);this.el=id=>this.dialog.querySelector('#tutorial-'+id);
   this.el('skip').onclick=()=>this.close(false);this.dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();this.close(false)}});
   this.el('primary').onclick=()=>this.primary();
@@ -41,14 +41,16 @@ export class TutorialController {
   if(this.api.camera().running){if(this.index===-1)this.advance();else this.status()}
   else{this.el('status').textContent=this.api.camera().error||'No pudimos activar la cámara. Revisá el permiso y volvé a intentar.';this.el('primary').textContent='REINTENTAR CÁMARA'}
  }
- advance(){this.index++;if(this.index>=steps.length){this.close(true);return}this.pending=false;this.polygonSince=null;this.api.rearm();this.render()}
+ advance(){this.index++;if(this.index>=steps.length){this.close(true);return}this.pending=false;this.polygonSince=null;this.api.rearm();if(steps[this.index].event==='BORDERS'||steps[this.index].event==='POINTS')this.api.prepareVisibility(steps[this.index].event);this.render()}
  render(){
   const step=steps[this.index],intro=this.index<0;
   this.dialog.classList.remove('gesture-success');
-  this.el('progress').textContent=intro?'BIENVENIDA':`${step.group} / 5`;
-  this.el('title').textContent=intro?'Controlá la cámara con tus manos':step.title;
+  this.el('progress').textContent=intro?'GUÍA DE GESTOS':`${String(this.index+1).padStart(2,'0')} / 09`;
+  this.dialog.style.setProperty('--progress',intro?'0%':`${(this.index+1)/steps.length*100}%`);
+  this.el('hand-label').textContent=step?.kind==='polygon'?'Ambas manos':step?.side==='Left'?'Mano izquierda':'Mano derecha';
+  this.el('title').textContent=intro?'Todo está en tus manos':step.title;
   this.el('text').textContent=intro?'Activá la cámara y practicá los gestos acá mismo.':step.text;
-  this.el('note').textContent=intro?'Juntá un dedo con el pulgar y separalos para hacer otro click.':step.note||'';
+  this.el('note').textContent=intro?'Uní los dedos. Separalos. Ese es tu click.':step.note||'';
   this.el('note').hidden=!this.el('note').textContent;
   this.el('animation').classList.remove('tutorial-flash');this.el('animation').innerHTML=step?.kind==='polygon'?polygonSvg():handSvg(step?.tip,step?.side);
   this.el('primary').hidden=!intro;this.el('primary').disabled=false;this.el('primary').textContent=intro&&!this.api.camera().running?'ACTIVAR CÁMARA Y EMPEZAR':'EMPEZAR';
@@ -76,6 +78,7 @@ export class TutorialController {
  }
  event(event){
   if(!this.active||this.pending)return;const step=steps[this.index];if(!step||step.event!==event)return;
+  if(['FILTER_NEXT','FILTER_PREVIOUS','BORDERS','POINTS'].includes(event))this.api.applyGesture(event);
   if(step.kind==='lock'){if(!this.practice.toggle('Left')||!this.practice.fixed.Left)return}
   if(step.kind==='unlock'){if(!this.practice.fixed.Left||!this.practice.toggle('Left')||this.practice.fixed.Left)return}
   if(step.kind==='timer'){this.pending=true;this.el('status').textContent='2';this.after(()=>this.el('status').textContent='1',1000);this.after(()=>this.confirm(),2000);return}
