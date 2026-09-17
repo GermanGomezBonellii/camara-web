@@ -1,17 +1,25 @@
-import {Renderer,categories,effects} from './renderer.js?v=4';
+import {Renderer,categories,effects} from './renderer.js?v=7';
 import {Click,contact,distance,dynamicIntensity,smoothIntensity,zoneFromHands,validZone,clamp} from './gestures.js';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');
 const source=document.createElement('canvas'),src=source.getContext('2d'),finished=document.createElement('canvas'),out=finished.getContext('2d');
 let renderer,stream,worker,ready=false,busy=false,running=false,starting=false,epoch=0,raf=0,workerTimer;
-let effect='Saturación',dynamic=false,intensity=7,dynamicValue=7.5,target=7.5,transition=null;
+let effect=effects[0],dynamic=false,intensity=7,dynamicValue=7.5,target=7.5,transition=null;
 let hands=[],trackingZone=null,fixedZone=null,lastDetection=0,lastSent=0,lastVideo=-1,lastRendered=-1,lastTick=0;
 let photoPending=false,saving=false,preview=null,previewUntil=0,downloadURL=null,counter=0,audio;
 const freshClicks=()=>({Left:new Click(),Right:new Click(),effectLeft:new Click(),effectRight:new Click(),ringLeft:new Click(),ringRight:new Click()});let clicks=freshClicks();
+const profiles={eco:{width:640,tracking:384,interval:100},balanced:{width:800,tracking:480,interval:75},quality:{width:960,tracking:640,interval:50}};
+let profileName='balanced';try{const saved=localStorage.getItem('camera-fx-performance');if(profiles[saved])profileName=saved}catch{}
+let profile=profiles[profileName],videoCallback=0;
+const detectorFrame=document.createElement('canvas'),detectorContext=detectorFrame.getContext('2d',{alpha:false});
+function resizeFrames(){if(!video.videoWidth)return;const scale=Math.min(1,profile.width/video.videoWidth,720/video.videoHeight);const w=Math.round(video.videoWidth*scale),h=Math.round(video.videoHeight*scale);for(const c of [source,finished,canvas]){c.width=w;c.height=h}const ratio=Math.min(1,profile.tracking/w);detectorFrame.width=Math.round(w*ratio);detectorFrame.height=Math.round(h*ratio);lastRendered=-1}
+$('performance').value=profileName;
+$('performance').onchange=e=>{profileName=e.target.value;profile=profiles[profileName];try{localStorage.setItem('camera-fx-performance',profileName)}catch{}if(running)resizeFrames();$('performance-hint').textContent=profileName==='eco'?'Menor detalle en imagen y fotos; menor consumo.':profileName==='quality'?'Más detalle en imagen y fotos; mayor consumo.':'Equilibrio entre detalle y fluidez.'};
+function scheduleFrame(){if(!running)return;if(video.requestVideoFrameCallback)videoCallback=video.requestVideoFrameCallback(now=>{videoCallback=0;tick(now)});else raf=requestAnimationFrame(tick)}
 let toastTimer;
 function toast(message,duration=2400){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),duration)}
 function showCategory(name){document.querySelectorAll('#categories button').forEach(b=>b.setAttribute('aria-pressed',String(b.textContent===name)));$('effects').replaceChildren(...categories[name].map(name=>{const b=document.createElement('button');b.textContent=name;b.setAttribute('aria-pressed',String(name===effect));b.onclick=()=>selectEffect(name);return b}))}
 function selectEffect(name){if(!effects.includes(name))throw Error('Efecto no válido');effect=name;$('effect-label').textContent=name;showCategory(Object.keys(categories).find(k=>categories[k].includes(name)))}
-for(const name of Object.keys(categories)){const b=document.createElement('button');b.textContent=name;b.onclick=()=>showCategory(name);$('categories').append(b)}showCategory('Básicos');
+for(const name of Object.keys(categories)){const b=document.createElement('button');b.textContent=name;b.onclick=()=>showCategory(name);$('categories').append(b)}showCategory('Colores');
 function setMode(value){dynamic=value;$('intensity').disabled=value;$('mode').setAttribute('aria-pressed',String(value));$('mode').textContent=value?'Usar fija':'Usar dinámica';$('mode-label').textContent=value?'DINÁMICA':'FIJA';$('dynamic-hint').hidden=!value;transition=value?{from:intensity,at:performance.now()}:null}
 $('mode').onclick=()=>setMode(!dynamic);$('intensity').oninput=e=>{intensity=Number(e.target.value);$('value').value=intensity.toFixed(1)};
 function updateZoneUI(){$('locked').hidden=!fixedZone;$('freeze').textContent=fixedZone?'Liberar zona':'Fijar zona';$('freeze').disabled=!running||(!fixedZone&&!validZone(trackingZone))}
@@ -29,24 +37,24 @@ function processHands(data){busy=false;if(!running||performance.now()-data.time>
 function startWorker(currentEpoch){worker=new Worker(new URL('./tracker.js',import.meta.url));worker.onmessage=({data})=>{if(epoch!==currentEpoch)return;if(data.type==='ready'){clearTimeout(workerTimer);ready=true;$('tracking').textContent='Esperando manos'}else if(data.type==='hands')processHands(data);else {console.error('Seguimiento:',data.message);failTracking()}};worker.onerror=event=>{console.error('Worker:',event.message);if(epoch===currentEpoch)failTracking()};workerTimer=setTimeout(()=>{if(epoch===currentEpoch&&!ready)failTracking()},45000);worker.postMessage({type:'init'})}
 function failTracking(){stopCamera();toast('No se pudo iniciar el seguimiento de manos. Revisá la conexión y volvé a activar la cámara.',6000)}
 async function startCamera(){if(starting||running)return;starting=true;const token=++epoch;initAudio();$('start').disabled=true;$('start').textContent='Abriendo cámara…';
- try{if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('Abrí esta página con HTTPS o desde localhost para usar la cámara.');renderer??=new Renderer();const obtained=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});if(epoch!==token){obtained.getTracks().forEach(t=>t.stop());return}stream=obtained;video.srcObject=stream;await video.play();if(epoch!==token)return;
- const scale=Math.min(1,960/video.videoWidth,720/video.videoHeight);const w=Math.round(video.videoWidth*scale),h=Math.round(video.videoHeight*scale);for(const c of [source,finished,canvas]){c.width=w;c.height=h}running=true;ready=false;busy=false;lastSent=0;lastVideo=-1;lastRendered=-1;lastTick=performance.now();clicks=freshClicks();hands=[];trackingZone=null;fixedZone=null;preview=null;previewUntil=0;
- $('welcome').hidden=true;$('stop').hidden=false;$('capture').disabled=false;$('tracking').textContent='Preparando seguimiento…';startWorker(token);raf=requestAnimationFrame(tick);stream.getVideoTracks()[0].addEventListener('ended',()=>{if(running&&epoch===token){stopCamera();toast('La cámara se desconectó. Podés volver a activarla.')}});
+ try{if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('Abrí esta página con HTTPS o desde localhost para usar la cámara.');renderer??=new Renderer();const obtained=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}},audio:false});if(epoch!==token){obtained.getTracks().forEach(t=>t.stop());return}stream=obtained;video.srcObject=stream;await video.play();if(epoch!==token)return;
+ resizeFrames();running=true;ready=false;busy=false;lastSent=0;lastVideo=-1;lastRendered=-1;lastTick=performance.now();clicks=freshClicks();hands=[];trackingZone=null;fixedZone=null;preview=null;previewUntil=0;
+ $('welcome').hidden=true;$('stop').hidden=false;$('capture').disabled=false;$('tracking').textContent='Preparando seguimiento…';startWorker(token);scheduleFrame();stream.getVideoTracks()[0].addEventListener('ended',()=>{if(running&&epoch===token){stopCamera();toast('La cámara se desconectó. Podés volver a activarla.')}});
  }catch(error){if(epoch===token){stopCamera();const messages={NotAllowedError:'No se habilitó la cámara. Permití el acceso desde el navegador y volvé a intentar.',NotFoundError:'No encontramos una cámara conectada.',NotReadableError:'La cámara está ocupada. Cerrá la aplicación de Python u otra app que la esté usando.'};toast(messages[error.name]||error.message||'No se pudo abrir la cámara.',7000)}}finally{if(epoch===token||!running){starting=false;$('start').disabled=false;$('start').textContent='Activar cámara'}}}
-function stopCamera(){epoch++;running=false;starting=false;ready=false;busy=false;cancelAnimationFrame(raf);clearTimeout(workerTimer);worker?.terminate();worker=null;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;hands=[];trackingZone=null;fixedZone=null;photoPending=false;preview=null;previewUntil=0;ctx.clearRect(0,0,canvas.width,canvas.height);$('welcome').hidden=false;$('stop').hidden=true;$('capture').disabled=true;$('tracking').textContent='Cámara apagada';$('start').disabled=false;$('start').textContent='Activar cámara';updateZoneUI()}
+function stopCamera(){epoch++;running=false;starting=false;ready=false;busy=false;cancelAnimationFrame(raf);if(videoCallback){video.cancelVideoFrameCallback(videoCallback);videoCallback=0;}clearTimeout(workerTimer);worker?.terminate();worker=null;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;hands=[];trackingZone=null;fixedZone=null;photoPending=false;preview=null;previewUntil=0;ctx.clearRect(0,0,canvas.width,canvas.height);$('welcome').hidden=false;$('stop').hidden=true;$('capture').disabled=true;$('tracking').textContent='Cámara apagada';$('start').disabled=false;$('start').textContent='Activar cámara';updateZoneUI()}
 $('start').onclick=startCamera;$('stop').onclick=stopCamera;
-function tick(now){if(!running)return;const frame=video.getVideoPlaybackQuality?.().totalVideoFrames||Math.floor(video.currentTime*30);if(frame===lastRendered&&!photoPending){raf=requestAnimationFrame(tick);return}lastRendered=frame;const dt=now-lastTick;lastTick=now;try{
+function tick(now){if(!running)return;const frame=video.getVideoPlaybackQuality?.().totalVideoFrames||Math.floor(video.currentTime*30);if(frame===lastRendered&&!photoPending){scheduleFrame();return}lastRendered=frame;const dt=now-lastTick;lastTick=now;try{
  if(video.readyState>=2){src.setTransform(-1,0,0,1,source.width,0);src.drawImage(video,0,0,source.width,source.height);src.setTransform(1,0,0,1,0,0);
  // Detector y render reciben la misma imagen espejada: Left/Right físicos.
- if(ready&&!busy&&now-lastSent>=50&&video.currentTime!==lastVideo){busy=true;lastSent=now;lastVideo=video.currentTime;const token=epoch;createImageBitmap(source).then(bitmap=>{if(!running||epoch!==token){bitmap.close();return}worker.postMessage({type:'frame',bitmap,time:now},[bitmap])}).catch(()=>{if(epoch===token)busy=false})}
+ if(ready&&!busy&&now-lastSent>=profile.interval&&video.currentTime!==lastVideo){busy=true;lastSent=now;lastVideo=video.currentTime;const token=epoch;detectorContext.drawImage(source,0,0,detectorFrame.width,detectorFrame.height);createImageBitmap(detectorFrame).then(bitmap=>{if(!running||epoch!==token){bitmap.close();return}worker.postMessage({type:'frame',bitmap,time:now},[bitmap])}).catch(()=>{if(epoch===token)busy=false})}
  if(now-lastDetection>400){hands=[];trackingZone=null;for(const click of Object.values(clicks))click.update(null,now);if(ready)$('tracking').textContent='Esperando manos';updateZoneUI()}
  dynamicValue=smoothIntensity(dynamicValue,target,dt);if(dynamic){const blend=transition?clamp((now-transition.at)/400,0,1):1;intensity=transition?transition.from+(dynamicValue-transition.from)*blend:dynamicValue;if(blend===1)transition=null;$('intensity').value=intensity;$('value').value=intensity.toFixed(1)}
- const zone=fixedZone??trackingZone;out.drawImage(renderer.render(source,zone,effect,intensity,now),0,0);
+ const zone=fixedZone??trackingZone;out.drawImage(zone&&(intensity>0||effect==='Pop rojo')?renderer.render(source,zone,effect,intensity,now):source,0,0);
  if(zone&&$('border').checked&&effect!=='Pop rojo'){out.strokeStyle='white';out.lineWidth=1;out.beginPath();zone.forEach((p,i)=>i?out.lineTo(p.x*source.width,p.y*source.height):out.moveTo(p.x*source.width,p.y*source.height));out.closePath();out.stroke()}
  if($('points').checked){out.fillStyle='white';for(const hand of hands)for(const i of [4,8,16,20]){out.beginPath();out.arc(hand[i].x*source.width,hand[i].y*source.height,4,0,Math.PI*2);out.fill()}}
  if(photoPending){photoPending=false;savePhoto()}ctx.drawImage(preview&&now<previewUntil?preview:finished,0,0);if(now>=previewUntil)preview=null;
  }
- raf=requestAnimationFrame(tick);
+ scheduleFrame();
  }catch(error){stopCamera();toast('Se interrumpió el procesamiento. Volvé a activar la cámara.',5000);console.error(error)}}
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else toast('Podés ampliar la vista girando el teléfono.')}catch{toast('No se pudo activar la pantalla completa.')}};
 document.addEventListener('keydown',e=>{if(!running||e.repeat||e.target.matches('input,textarea,select,a')||e.target.isContentEditable)return;if(e.code==='Space'||e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();requestPhoto()}},true);
@@ -66,4 +74,5 @@ function showControls(show){
  $('panel-toggle').textContent=show?'Ocultar controles':'Mostrar controles';
 }
 $('panel-toggle').onclick=()=>showControls($('controls').hidden);
+$('performance').dispatchEvent(new Event('change'));
 showControls(!matchMedia('(max-width: 800px)').matches);
