@@ -1,5 +1,5 @@
 import {Renderer,categories,effects} from './renderer.js?v=7';
-import {Click,contact,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=10';
+import {Click,contact,distance,dynamicIntensity,smoothIntensity,NodeZone,validZone,clamp} from './gestures.js?v=14';
 const $=id=>document.getElementById(id),video=$('video'),canvas=$('camera'),ctx=canvas.getContext('2d');
 const source=document.createElement('canvas'),src=source.getContext('2d'),finished=document.createElement('canvas'),out=finished.getContext('2d');
 let renderer,stream,worker,ready=false,busy=false,running=false,starting=false,epoch=0,raf=0,workerTimer;
